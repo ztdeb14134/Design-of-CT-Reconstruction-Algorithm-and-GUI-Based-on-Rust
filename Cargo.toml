@@ -1,6 +1,8 @@
 [package]
-name = "CT_rebuild_project"
+name = "ct_rebuild_project"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+egui = "*"
+eframe = "*"
