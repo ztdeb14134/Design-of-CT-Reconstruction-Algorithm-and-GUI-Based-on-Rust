@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 egui = "*"
 eframe = "*"
+image = "*"
+# opencv = "*"
+nalgebra = "*"
+nshare = "*"
