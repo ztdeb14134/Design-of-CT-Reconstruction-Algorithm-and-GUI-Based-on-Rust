@@ -28,7 +28,7 @@ pub struct MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            input_file_path: String::from("src\\ct_data.bin"),
+            input_file_path: String::from("src\\CT_3.bin"),
             cols: "600".to_string(),
             rows: "600".to_string(),
             frames: "246".to_string(),
@@ -129,8 +129,6 @@ impl eframe::App for MyApp {
                         println!("投影成功");
                         save_as_png(self.pjimage.clone(), "src\\888.png");
                         println!("{}", self.pjimage[0].len());
-                    }
-                    if ui.button("根据投影进行重建").clicked() {
                         self.appstate = AppState::Rebuild;
                     }
                 });

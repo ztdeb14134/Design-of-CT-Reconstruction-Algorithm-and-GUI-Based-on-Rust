@@ -1,11 +1,15 @@
 use std::f32::consts::PI;
 
+use nalgebra::ComplexField;
+
 pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<Vec<f32>> {
     let n_angles = projections.len(); // 角度数
     let step_angle = PI / n_angles as f32; // 每个角度之间的间隔（弧度制）
 
     // 初始化重建图像为 0
-    let mut reconstructed_image = vec![vec![0.0; image_size]; image_size];
+    let mut reconstructed_image = vec![vec![1.0; image_size]; image_size];
+    let mut cishu = vec![vec![0.0; image_size]; image_size];
+
     println!("重建角度");
     for (i, projection) in projections.iter().enumerate() {
         let angle = i as f32 * step_angle; // 当前角度
@@ -27,12 +31,25 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
 
                     // 如果坐标落在当前投影值中，则进行叠加
                     if projection_coordinate.abs() < 0.5 {
-                        reconstructed_image[599 - y][x] += value / 255.0;
+                        reconstructed_image[599 - y][x] += value.powf(0.76)
+                            + reconstructed_image[599 - y][x].powf(0.2) * value.powf(2.0);
+                        cishu[599 - y][x] += 1.0;
                     }
                 }
             }
         }
     }
+    for i in 0..image_size {
+        for j in 0..image_size {
+            reconstructed_image[i][j] =
+                (reconstructed_image[i][j].powf(1.7) / cishu[i][j].powf(1.5)).powf(1.77);
+        }
+    }
+    // for i in reconstructed_image.iter() {
+    //     for j in i.iter() {
+    //         let _ = j.powf(0.1);
+    //     }
+    // }
 
     let max_value = reconstructed_image
         .iter()
@@ -53,6 +70,20 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
 
     reconstructed_image
 }
+// fn negative_image(image: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+//     // 动态计算图片的最大值
+//     let max_value = image
+//         .iter()
+//         .flat_map(|row| row.iter())
+//         .cloned()
+//         .fold(f32::MIN, f32::max);
+
+//     // 生成反片图片
+//     image
+//         .iter()
+//         .map(|row| row.iter().map(|&pixel| max_value - pixel).collect())
+//         .collect()
+// }
 
 #[cfg(test)]
 mod tests {
