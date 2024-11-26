@@ -8,7 +8,6 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
 
     // 初始化重建图像为 0
     let mut reconstructed_image = vec![vec![1.0; image_size]; image_size];
-    let mut cishu = vec![vec![0.0; image_size]; image_size];
 
     println!("重建角度");
     for (i, projection) in projections.iter().enumerate() {
@@ -33,7 +32,6 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
                     if projection_coordinate.abs() < 0.5 {
                         reconstructed_image[599 - y][x] += value.powf(0.76)
                             + reconstructed_image[599 - y][x].powf(0.2) * value.powf(2.0);
-                        cishu[599 - y][x] += 1.0;
                     }
                 }
             }
@@ -41,8 +39,7 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
     }
     for i in 0..image_size {
         for j in 0..image_size {
-            reconstructed_image[i][j] =
-                (reconstructed_image[i][j].powf(1.7) / cishu[i][j].powf(1.5)).powf(1.77);
+            reconstructed_image[i][j] = (reconstructed_image[i][j].powf(1.7)).powf(1.77);
         }
     }
     // for i in reconstructed_image.iter() {

@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     projection::{divide_circle, project_image},
     readct::{readct, save_as_png, save_layer_as_image},
-    rebuild::reconstruct_image,
+    rebuild_dbp::reconstruct_image,
 };
 enum AppState {
     Home,
