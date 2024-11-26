@@ -877,6 +877,7 @@ dependencies = [
  "image",
  "nalgebra",
  "nshare",
+ "rand",
 ]
 
 [[package]]

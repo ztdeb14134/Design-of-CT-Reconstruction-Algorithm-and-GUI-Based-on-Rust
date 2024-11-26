@@ -109,3 +109,33 @@ pub fn save_layer_as_image(
     println!("图像已保存到: {}", output_path);
     Ok(frame.clone())
 }
+pub fn save_as_png(data: Vec<Vec<f32>>, output_path: &str) {
+    let rows = data.len();
+    let cols = data[0].len();
+
+    // 找到最大值和最小值用于归一化
+    let max_value = data
+        .iter()
+        .flat_map(|row| row.iter())
+        .cloned()
+        .fold(f32::MIN, f32::max);
+    let min_value = data
+        .iter()
+        .flat_map(|row| row.iter())
+        .cloned()
+        .fold(f32::MAX, f32::min);
+
+    // 创建灰度图像
+    let mut img = GrayImage::new(cols as u32, rows as u32);
+
+    for (y, row) in data.iter().enumerate() {
+        for (x, &value) in row.iter().enumerate() {
+            // 归一化到 [0, 255]
+            let normalized = ((value - min_value) / (max_value - min_value) * 255.0) as u8;
+            img.put_pixel(x as u32, y as u32, Luma([normalized]));
+        }
+    }
+
+    // 保存为 PNG 文件
+    img.save(output_path).expect("Failed to save PNG file");
+}

@@ -1,35 +1,43 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::readct::{readct, save_layer_as_image};
+use crate::{
+    projection::{divide_circle, project_image},
+    readct::{readct, save_as_png, save_layer_as_image},
+    rebuild::reconstruct_image,
+};
 enum AppState {
     Home,
     OneProjection,
-    AllProjection,
+    Rebuild,
+    Dbp,
+    Showimg,
 }
 pub struct MyApp {
-    input_file_path: String,
-    cols: String,
-    rows: String,
-    frames: String,
-    bytes_per_pixel: String,
-    nextstate: AppState,
-    appstate: AppState,
-    ct: Vec<Vec<Vec<f32>>>,
-    sl: String,
+    input_file_path: String,  //输入文件路径
+    cols: String,             //长
+    rows: String,             //宽
+    frames: String,           //高
+    bytes_per_pixel: String,  //单位像素占用字节
+    appstate: AppState,       //app状态
+    ct: Vec<Vec<Vec<f32>>>,   //ct数据
+    sl: String,               //切片层数
+    projectionangles: String, //投影角度个数
+    pjimage: Vec<Vec<f32>>,   //投影数据
 }
 
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            input_file_path: String::from("src\\CT_3.bin"),
+            input_file_path: String::from("src\\ct_data.bin"),
             cols: "600".to_string(),
             rows: "600".to_string(),
             frames: "246".to_string(),
             bytes_per_pixel: "4".to_string(),
             appstate: AppState::Home,
-            nextstate: AppState::OneProjection,
             ct: vec![vec![vec![]]],
             sl: "0".to_string(),
+            projectionangles: "30".to_string(),
+            pjimage: vec![],
         }
     }
 }
@@ -85,12 +93,6 @@ impl eframe::App for MyApp {
                         // save_layer_as_image(&image_3d, 100, "src\\666.png").unwrap();
                         // println!("{:?}", image_3d)
                     }
-                    if ui.button("切片反投影").clicked() {
-                        self.nextstate = AppState::OneProjection
-                    }
-                    if ui.button("全部反投影").clicked() {
-                        self.nextstate = AppState::AllProjection
-                    }
                     ui.label(format!(
                         "当前时间{}",
                         match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -110,16 +112,61 @@ impl eframe::App for MyApp {
                         ui.label(format!("输入想要切片的层(0-{})", self.frames));
                         ui.text_edit_singleline(&mut self.sl)
                     });
+                    ui.horizontal(|ui| {
+                        ui.label(format!("输入想要投影的数量"));
+                        ui.text_edit_singleline(&mut self.projectionangles)
+                    });
                     if ui.button("切片后进行投影").clicked() {
                         println!("正在切片保存");
                         let image: Vec<Vec<f32>> =
                             save_layer_as_image(&self.ct, self.sl.parse().unwrap(), "src\\666.png")
                                 .expect("切片保存失败");
                         println!("正在投影");
+                        self.pjimage = project_image(
+                            image,
+                            divide_circle(self.projectionangles.parse().unwrap()),
+                        );
+                        println!("投影成功");
+                        save_as_png(self.pjimage.clone(), "src\\888.png");
+                        println!("{}", self.pjimage[0].len());
+                    }
+                    if ui.button("根据投影进行重建").clicked() {
+                        self.appstate = AppState::Rebuild;
                     }
                 });
             }
-            AppState::AllProjection => {}
+            AppState::Rebuild => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("请选择重建方式");
+                    if ui.button("直接反投影").clicked() {
+                        self.appstate = AppState::Dbp;
+                    }
+                    if ui.button("滤波反投影").clicked() {
+                        self.appstate = AppState::Dbp;
+                    }
+                });
+            }
+            AppState::Dbp => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("正在进行直接反投影");
+                    println!("正在进行直接反投影");
+                    let rebuild_ct = reconstruct_image(self.pjimage.clone(), 600);
+                    save_as_png(rebuild_ct, "src/777.png");
+                    println!("直接反投影成功,图片已保存到src/777.png");
+                    self.appstate = AppState::Showimg;
+                });
+            }
+            AppState::Showimg => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("直接反投影展示对比");
+                    if ui.button("回到主页").clicked() {
+                        self.appstate = AppState::Home;
+                    }
+                    if ui.button("重新选择投影方式").clicked() {
+                        self.appstate = AppState::OneProjection;
+                    }
+                });
+            }
         }
     }
 }

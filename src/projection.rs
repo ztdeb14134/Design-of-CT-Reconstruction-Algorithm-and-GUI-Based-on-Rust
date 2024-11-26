@@ -1,7 +1,7 @@
 use nalgebra::{Matrix2, Vector2};
 use std::f32::consts::PI;
 
-pub fn project_image(image: Vec<Vec<f32>>, angles: Vec<usize>) -> Vec<Vec<f32>> {
+pub fn project_image(image: Vec<Vec<f32>>, angles: Vec<f32>) -> Vec<Vec<f32>> {
     let rows = image.len();
     let cols = image[0].len();
 
@@ -13,11 +13,12 @@ pub fn project_image(image: Vec<Vec<f32>>, angles: Vec<usize>) -> Vec<Vec<f32>> 
 
     // 结果存储投影值
     let mut projections: Vec<Vec<f32>> = Vec::new();
+    println!("投影角度:");
 
     for &angle in angles.iter() {
         // 将角度转为弧度
         let angle_in_radians = (angle as f32) * PI / 180.0;
-
+        print!("{}  ", angle_in_radians);
         // 计算旋转矩阵，使用 2x2 矩阵
         let cos_angle = angle_in_radians.cos();
         let sin_angle = angle_in_radians.sin();
@@ -42,9 +43,20 @@ pub fn project_image(image: Vec<Vec<f32>>, angles: Vec<usize>) -> Vec<Vec<f32>> 
                 }
             }
         }
+        let max_value = projection.iter().cloned().fold(f32::MIN, f32::max);
+        let min_value = projection.iter().cloned().fold(f32::MAX, f32::min);
 
+        if max_value > min_value {
+            for value in projection.iter_mut() {
+                *value = (*value - min_value) / (max_value - min_value); // 归一化到 [0, 1]
+            }
+        }
         projections.push(projection);
     }
-
     projections
+}
+
+pub fn divide_circle(n: usize) -> Vec<f32> {
+    let step = 180.0 / n as f32;
+    (0..n as usize).map(|i| i as f32 * step).collect()
 }
