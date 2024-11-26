@@ -1,59 +1,57 @@
-use nalgebra::{Matrix2, Vector2};
 use std::f32::consts::PI;
 
 pub fn project_image(image: Vec<Vec<f32>>, angles: Vec<f32>) -> Vec<Vec<f32>> {
+    println!("{:?}", angles);
     let rows = image.len();
     let cols = image[0].len();
 
-    // 将图像转为矩阵形式
-    let mut img_matrix = Vec::new();
-    for row in image.iter() {
-        img_matrix.push(row.clone());
+    // 确保图片不为空
+    if rows == 0 || cols == 0 {
+        return vec![];
     }
 
-    // 结果存储投影值
-    let mut projections: Vec<Vec<f32>> = Vec::new();
-    println!("投影角度:");
+    let max_dim = rows.max(cols);
+    let center_x = (cols as f32) / 2.0;
+    let center_y = (rows as f32) / 2.0;
 
-    for &angle in angles.iter() {
-        // 将角度转为弧度
-        let angle_in_radians = (angle as f32) * PI / 180.0;
-        print!("{}  ", angle_in_radians);
-        // 计算旋转矩阵，使用 2x2 矩阵
-        let cos_angle = angle_in_radians.cos();
-        let sin_angle = angle_in_radians.sin();
-        let rotation_matrix = Matrix2::new(cos_angle, -sin_angle, sin_angle, cos_angle);
+    angles
+        .iter()
+        .map(|&angle| {
+            let radians = angle * PI / 180.0;
 
-        // 计算投影
-        let mut projection = vec![0.0; rows];
+            // 投影结果
+            let mut projection = vec![0.0; max_dim];
 
-        for r in 0..rows {
-            for c in 0..cols {
-                // 使用 Vector2 来表示二维点，旋转时只考虑 x 和 y 坐标
-                let point =
-                    Vector2::new(c as f32 - cols as f32 / 2.0, r as f32 - rows as f32 / 2.0);
+            // 遍历每个像素
+            for y in 0..rows {
+                for x in 0..cols {
+                    // 原始坐标
+                    let x_rel = x as f32 - center_x;
+                    let y_rel = y as f32 - center_y;
 
-                // 旋转点
-                let rotated_point = rotation_matrix * point;
+                    // 旋转坐标
+                    let x_rot = x_rel * radians.cos() - y_rel * radians.sin() + center_x;
+                    let y_rot = x_rel * radians.sin() + y_rel * radians.cos() + center_y;
 
-                // 投影到某一方向（x 或 y）上
-                let projection_value = rotated_point.x + cols as f32 / 2.0; // 投影到x轴
-                if projection_value >= 0.0 && projection_value < cols as f32 {
-                    projection[r] += image[r][projection_value as usize];
+                    // 检查旋转后的坐标是否在边界内
+                    if x_rot >= 0.0
+                        && x_rot < (cols - 1) as f32
+                        && y_rot >= 0.0
+                        && (y_rot - 1.0) < rows as f32
+                    {
+                        // 插值（简单近邻采样，优化时可用双线性插值）
+                        let x_nearest = x_rot.round() as usize;
+                        // let y_nearest = y_rot.round() as usize;
+
+                        // 累加到投影结果中（根据旋转后的x坐标）
+                        projection[x_nearest] += image[y][x];
+                    }
                 }
             }
-        }
-        let max_value = projection.iter().cloned().fold(f32::MIN, f32::max);
-        let min_value = projection.iter().cloned().fold(f32::MAX, f32::min);
 
-        if max_value > min_value {
-            for value in projection.iter_mut() {
-                *value = (*value - min_value) / (max_value - min_value); // 归一化到 [0, 1]
-            }
-        }
-        projections.push(projection);
-    }
-    projections
+            projection
+        })
+        .collect()
 }
 
 pub fn divide_circle(n: usize) -> Vec<f32> {

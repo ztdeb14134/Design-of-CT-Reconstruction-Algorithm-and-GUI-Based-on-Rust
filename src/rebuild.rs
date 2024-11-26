@@ -27,7 +27,7 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
 
                     // 如果坐标落在当前投影值中，则进行叠加
                     if projection_coordinate.abs() < 0.5 {
-                        reconstructed_image[x][y] += value / 255.0;
+                        reconstructed_image[599 - y][x] += value / 255.0;
                     }
                 }
             }
