@@ -60,7 +60,7 @@ pub fn reconstruct_image_dsp(projections: Vec<Vec<f32>>, image_size: usize) -> V
                     } else {
                         filtered_projection[r_idx]
                     };
-                    image[y][x] += value;
+                    image[599 - y][x] += value;
                 }
             }
         }

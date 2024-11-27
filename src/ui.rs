@@ -1,9 +1,9 @@
 use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::{
     projection::{divide_circle, project_image},
     readct::{readct, save_as_png, save_layer_as_image},
-    rebuild_dbp::reconstruct_image_dbp, rebuild_dsp::reconstruct_image_dsp,
+    rebuild_dbp::reconstruct_image_dbp,
+    rebuild_dsp::reconstruct_image_dsp,
 };
 enum AppState {
     Home,
@@ -29,7 +29,7 @@ pub struct MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            input_file_path: String::from("src\\ct_data.bin"),
+            input_file_path: String::from("src\\CT_3.bin"),
             cols: "600".to_string(),
             rows: "600".to_string(),
             frames: "246".to_string(),
@@ -39,6 +39,7 @@ impl Default for MyApp {
             sl: "0".to_string(),
             projectionangles: "30".to_string(),
             pjimage: vec![],
+
         }
     }
 }
