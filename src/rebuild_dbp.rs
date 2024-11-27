@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use nalgebra::ComplexField;
 
-pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<Vec<f32>> {
+pub fn reconstruct_image_dbp(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<Vec<f32>> {
     let n_angles = projections.len(); // 角度数
     let step_angle = PI / n_angles as f32; // 每个角度之间的间隔（弧度制）
 
@@ -39,7 +39,7 @@ pub fn reconstruct_image(projections: Vec<Vec<f32>>, image_size: usize) -> Vec<V
     }
     for i in 0..image_size {
         for j in 0..image_size {
-            reconstructed_image[i][j] = (reconstructed_image[i][j].powf(1.7)).powf(1.77);
+            reconstructed_image[i][j] = (reconstructed_image[i][j].powf(1.37)).powf(1.27);
         }
     }
     // for i in reconstructed_image.iter() {
@@ -95,7 +95,7 @@ mod tests {
             vec![1.0, 2.0, 3.0, 2.0, 1.0], // 90度投影
         ];
 
-        let reconstructed_image = reconstruct_image(projections, 5);
+        let reconstructed_image = reconstruct_image_dbp(projections, 5);
 
         // 打印重建结果
         for row in reconstructed_image.iter() {

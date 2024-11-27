@@ -3,13 +3,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     projection::{divide_circle, project_image},
     readct::{readct, save_as_png, save_layer_as_image},
-    rebuild_dbp::reconstruct_image,
+    rebuild_dbp::reconstruct_image_dbp, rebuild_dsp::reconstruct_image_dsp,
 };
 enum AppState {
     Home,
     OneProjection,
     Rebuild,
     Dbp,
+    Dsp,
     Showimg,
 }
 pub struct MyApp {
@@ -28,7 +29,7 @@ pub struct MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            input_file_path: String::from("src\\CT_3.bin"),
+            input_file_path: String::from("src\\ct_data.bin"),
             cols: "600".to_string(),
             rows: "600".to_string(),
             frames: "246".to_string(),
@@ -140,7 +141,7 @@ impl eframe::App for MyApp {
                         self.appstate = AppState::Dbp;
                     }
                     if ui.button("滤波反投影").clicked() {
-                        self.appstate = AppState::Dbp;
+                        self.appstate = AppState::Dsp;
                     }
                 });
             }
@@ -148,9 +149,19 @@ impl eframe::App for MyApp {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.heading("正在进行直接反投影");
                     println!("正在进行直接反投影");
-                    let rebuild_ct = reconstruct_image(self.pjimage.clone(), 600);
+                    let rebuild_ct = reconstruct_image_dbp(self.pjimage.clone(), 600);
                     save_as_png(rebuild_ct, "src/777.png");
                     println!("直接反投影成功,图片已保存到src/777.png");
+                    self.appstate = AppState::Showimg;
+                });
+            }
+            AppState::Dsp => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("正在进行滤波反投影");
+                    println!("正在进行滤波反投影");
+                    let rebuild_ct = reconstruct_image_dsp(self.pjimage.clone(), 600);
+                    save_as_png(rebuild_ct, "src/999.png");
+                    println!("滤波反投影成功,图片已保存到src/999.png");
                     self.appstate = AppState::Showimg;
                 });
             }

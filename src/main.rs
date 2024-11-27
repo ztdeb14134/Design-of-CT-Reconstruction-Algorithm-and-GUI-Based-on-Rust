@@ -11,6 +11,11 @@ fn main() -> Result<(), eframe::Error> {
         }),
     )
 }
+
+
+
+
+
 #[cfg(test)]
 mod printbin {
     #[test]
