@@ -1,4 +1,8 @@
-/target
+/target/release/*
+!/target/release/ct_rebuild_project.exe
+/target/debug
+/target/.rustc_info.json
+/target/CACHEDIR.TAG
 src/CT_3.bin
 src/666.png
 src/777.png
