@@ -1,10 +1,12 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use egui::TextureHandle;
+
 use crate::{
     projection::{divide_circle, project_image},
-    readct::{readct, save_as_png, save_layer_as_image},
+    readct::{load_texture_from_file, readct, save_as_png, save_layer_as_image},
     rebuild_dbp::reconstruct_image_dbp,
     rebuild_dsp::reconstruct_image_dsp,
 };
+use std::time::{SystemTime, UNIX_EPOCH};
 enum AppState {
     Home,
     OneProjection,
@@ -24,6 +26,8 @@ pub struct MyApp {
     sl: String,               //切片层数
     projectionangles: String, //投影角度个数
     pjimage: Vec<Vec<f32>>,   //投影数据
+    texture1: Option<TextureHandle>,
+    texture2: Option<TextureHandle>,
 }
 
 impl Default for MyApp {
@@ -39,7 +43,8 @@ impl Default for MyApp {
             sl: "0".to_string(),
             projectionangles: "30".to_string(),
             pjimage: vec![],
-
+            texture1: None,
+            texture2: None,
         }
     }
 }
@@ -131,6 +136,8 @@ impl eframe::App for MyApp {
                         println!("投影成功");
                         save_as_png(self.pjimage.clone(), "src\\888.png");
                         println!("{}", self.pjimage[0].len());
+                        self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
+                        self.texture2 = Some(load_texture_from_file(ctx, "src/888.png"));
                         self.appstate = AppState::Rebuild;
                     }
                 });
@@ -163,12 +170,22 @@ impl eframe::App for MyApp {
                     let rebuild_ct = reconstruct_image_dsp(self.pjimage.clone(), 600);
                     save_as_png(rebuild_ct, "src/999.png");
                     println!("滤波反投影成功,图片已保存到src/999.png");
+                    self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
+                    self.texture2 = Some(load_texture_from_file(ctx, "src/999.png"));
                     self.appstate = AppState::Showimg;
                 });
             }
             AppState::Showimg => {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.heading("直接反投影展示对比");
+                    ui.heading("投影数据与原数据对比展示");
+                    ui.horizontal(|ui| {
+                        if let Some(texture) = &self.texture1 {
+                            ui.image((texture.id(), texture.size_vec2()));
+                        }
+                        if let Some(texture) = &self.texture2 {
+                            ui.image((texture.id(), texture.size_vec2()));
+                        }
+                    });
                     if ui.button("回到主页").clicked() {
                         self.appstate = AppState::Home;
                     }

@@ -1,7 +1,7 @@
+use egui::FontData;
+use egui::FontDefinitions;
+use egui::FontFamily;
 pub fn setup_custom_fonts(ctx: &egui::Context) {
-    use egui::FontData;
-    use egui::FontDefinitions;
-    use egui::FontFamily;
     let mut fonts = FontDefinitions::default();
 
     fonts.font_data.insert(

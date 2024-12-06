@@ -1,6 +1,8 @@
+use eframe::egui;
+use eframe::egui::{ColorImage, TextureHandle};
+use image::GenericImageView;
 use std::fs::File;
 use std::io::Read;
-
 pub fn readct(
     cols: usize,
     rows: usize,
@@ -138,4 +140,22 @@ pub fn save_as_png(data: Vec<Vec<f32>>, output_path: &str) {
 
     // 保存为 PNG 文件
     img.save(output_path).expect("Failed to save PNG file");
+}
+
+pub fn load_texture_from_file(ctx: &egui::Context, file_path: &str) -> TextureHandle {
+    // 使用 image crate 加载 PNG 文件
+    let image = image::open(file_path).expect("Failed to load image");
+    let (width, height) = image.dimensions();
+
+    // 转换为 RGBA 格式
+    let image_buffer = image.to_rgba8();
+
+    // 将图像数据转换为 egui::ColorImage
+    let color_image = ColorImage::from_rgba_unmultiplied(
+        [width as usize, height as usize],
+        image_buffer.as_flat_samples().as_slice(),
+    );
+
+    // 加载纹理
+    ctx.load_texture(file_path, color_image, egui::TextureOptions::default())
 }
