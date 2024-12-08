@@ -160,6 +160,8 @@ impl eframe::App for MyApp {
                     let rebuild_ct = reconstruct_image_dbp(self.pjimage.clone(), 600);
                     save_as_png(rebuild_ct, "src/777.png");
                     println!("直接反投影成功,图片已保存到src/777.png");
+                    self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
+                    self.texture2 = Some(load_texture_from_file(ctx, "src/777.png"));
                     self.appstate = AppState::Showimg;
                 });
             }
