@@ -15,6 +15,7 @@ enum AppState {
     Dsp,
     Showimg,
 }
+
 pub struct MyApp {
     input_file_path: String,  //输入文件路径
     cols: String,             //长
@@ -28,6 +29,8 @@ pub struct MyApp {
     pjimage: Vec<Vec<f32>>,   //投影数据
     texture1: Option<TextureHandle>,
     texture2: Option<TextureHandle>,
+    reconstruction_method: String,
+    use_time: f64,
 }
 
 impl Default for MyApp {
@@ -45,10 +48,20 @@ impl Default for MyApp {
             pjimage: vec![],
             texture1: None,
             texture2: None,
+            reconstruction_method: String::new(),
+            use_time: 0.0,
         }
     }
 }
-
+impl MyApp {
+    fn readtime(self: &mut Self) {
+        self.use_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64()
+            - self.use_time;
+    }
+}
 // 实现 eframe::App trait
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -155,6 +168,7 @@ impl eframe::App for MyApp {
             }
             AppState::Dbp => {
                 egui::CentralPanel::default().show(ctx, |ui| {
+                    self.readtime();
                     ui.heading("正在进行直接反投影");
                     println!("正在进行直接反投影");
                     let rebuild_ct = reconstruct_image_dbp(self.pjimage.clone(), 600);
@@ -162,11 +176,14 @@ impl eframe::App for MyApp {
                     println!("直接反投影成功,图片已保存到src/777.png");
                     self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
                     self.texture2 = Some(load_texture_from_file(ctx, "src/777.png"));
+                    self.reconstruction_method = "直接反投影".to_string();
+                    self.readtime();
                     self.appstate = AppState::Showimg;
                 });
             }
             AppState::Dsp => {
                 egui::CentralPanel::default().show(ctx, |ui| {
+                    self.readtime();
                     ui.heading("正在进行滤波反投影");
                     println!("正在进行滤波反投影");
                     let rebuild_ct = reconstruct_image_dsp(self.pjimage.clone(), 600);
@@ -174,6 +191,8 @@ impl eframe::App for MyApp {
                     println!("滤波反投影成功,图片已保存到src/999.png");
                     self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
                     self.texture2 = Some(load_texture_from_file(ctx, "src/999.png"));
+                    self.reconstruction_method = "滤波反投影".to_string();
+                    self.readtime();
                     self.appstate = AppState::Showimg;
                 });
             }
@@ -181,13 +200,29 @@ impl eframe::App for MyApp {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.heading("投影数据与原数据对比展示");
                     ui.horizontal(|ui| {
-                        if let Some(texture) = &self.texture1 {
-                            ui.image((texture.id(), texture.size_vec2()));
-                        }
-                        if let Some(texture) = &self.texture2 {
-                            ui.image((texture.id(), texture.size_vec2()));
-                        }
+                        ui.vertical(|ui| {
+                            if let Some(texture) = &self.texture1 {
+                                ui.image((texture.id(), texture.size_vec2()));
+                                ui.label(format!("第{}层切片的原图 ", self.sl));
+                            }
+                        });
+
+                        ui.vertical(|ui| {
+                            if let Some(texture) = &self.texture2 {
+                                ui.image((texture.id(), texture.size_vec2()));
+                                ui.label(format!(
+                                    " 第{}层切片通过{}的重建图像, {} 个投影角度",
+                                    self.sl, self.reconstruction_method, self.projectionangles
+                                ));
+                            }
+                        });
                     });
+                    // 重建时间显示
+                    ui.label(format!(
+                        "{} 重建耗时：{:.4} 秒",
+                        self.reconstruction_method, self.use_time,
+                    ));
+
                     if ui.button("回到主页").clicked() {
                         self.appstate = AppState::Home;
                     }
