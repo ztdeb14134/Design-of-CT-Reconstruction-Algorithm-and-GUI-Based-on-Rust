@@ -4,8 +4,9 @@
 /target/.rustc_info.json
 /target/CACHEDIR.TAG
 src/CT_3.bin
-src/666.png
-src/777.png
-src/888.png
-src/999.png
+src/project.png
+src/raw.png
+src/sart.png
+src/Dbp.png
+src/Dsp.png
 src/ct_data.bin

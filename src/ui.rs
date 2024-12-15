@@ -1,10 +1,12 @@
 use egui::TextureHandle;
+use ndarray::Axis;
 
 use crate::{
     projection::{divide_circle, project_image},
     readct::{load_texture_from_file, readct, save_as_png, save_layer_as_image},
     rebuild_dbp::reconstruct_image_dbp,
     rebuild_dsp::reconstruct_image_dsp,
+    sart::sart_reconstruction,
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 enum AppState {
@@ -14,6 +16,7 @@ enum AppState {
     Dbp,
     Dsp,
     Showimg,
+    Sart,
 }
 
 pub struct MyApp {
@@ -110,7 +113,7 @@ impl eframe::App for MyApp {
                                 vec![] // Provide a default value
                             }
                         };
-                        // save_layer_as_image(&image_3d, 100, "src\\666.png").unwrap();
+                        // save_layer_as_image(&image_3d, 100, "src\\raw.png").unwrap();
                         // println!("{:?}", image_3d)
                     }
                     ui.label(format!(
@@ -139,7 +142,7 @@ impl eframe::App for MyApp {
                     if ui.button("切片后进行投影").clicked() {
                         println!("正在切片保存");
                         let image: Vec<Vec<f32>> =
-                            save_layer_as_image(&self.ct, self.sl.parse().unwrap(), "src\\666.png")
+                            save_layer_as_image(&self.ct, self.sl.parse().unwrap(), "src\\raw.png")
                                 .expect("切片保存失败");
                         println!("正在投影");
                         self.pjimage = project_image(
@@ -147,10 +150,10 @@ impl eframe::App for MyApp {
                             divide_circle(self.projectionangles.parse().unwrap()),
                         );
                         println!("投影成功");
-                        save_as_png(self.pjimage.clone(), "src\\888.png");
+                        save_as_png(self.pjimage.clone(), "src\\project.png");
                         println!("{}", self.pjimage[0].len());
-                        self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
-                        self.texture2 = Some(load_texture_from_file(ctx, "src/888.png"));
+                        self.texture1 = Some(load_texture_from_file(ctx, "src/raw.png"));
+                        self.texture2 = Some(load_texture_from_file(ctx, "src/project.png"));
                         self.appstate = AppState::Rebuild;
                     }
                 });
@@ -160,6 +163,9 @@ impl eframe::App for MyApp {
                     ui.heading("请选择重建方式");
                     if ui.button("直接反投影").clicked() {
                         self.appstate = AppState::Dbp;
+                    }
+                    if ui.button("联合代数重建反投影").clicked() {
+                        self.appstate = AppState::Sart;
                     }
                     if ui.button("滤波反投影").clicked() {
                         self.appstate = AppState::Dsp;
@@ -172,10 +178,10 @@ impl eframe::App for MyApp {
                     ui.heading("正在进行直接反投影");
                     println!("正在进行直接反投影");
                     let rebuild_ct = reconstruct_image_dbp(self.pjimage.clone(), 600);
-                    save_as_png(rebuild_ct, "src/777.png");
-                    println!("直接反投影成功,图片已保存到src/777.png");
-                    self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
-                    self.texture2 = Some(load_texture_from_file(ctx, "src/777.png"));
+                    save_as_png(rebuild_ct, "src/Dbp.png");
+                    println!("直接反投影成功,图片已保存到src/Dbp.png");
+                    self.texture1 = Some(load_texture_from_file(ctx, "src/raw.png"));
+                    self.texture2 = Some(load_texture_from_file(ctx, "src/Dbp.png"));
                     self.reconstruction_method = "直接反投影".to_string();
                     self.readtime();
                     self.appstate = AppState::Showimg;
@@ -187,11 +193,34 @@ impl eframe::App for MyApp {
                     ui.heading("正在进行滤波反投影");
                     println!("正在进行滤波反投影");
                     let rebuild_ct = reconstruct_image_dsp(self.pjimage.clone(), 600);
-                    save_as_png(rebuild_ct, "src/999.png");
-                    println!("滤波反投影成功,图片已保存到src/999.png");
-                    self.texture1 = Some(load_texture_from_file(ctx, "src/666.png"));
-                    self.texture2 = Some(load_texture_from_file(ctx, "src/999.png"));
+                    save_as_png(rebuild_ct, "src/Dsp.png");
+                    println!("滤波反投影成功,图片已保存到src/Dsp.png");
+                    self.texture1 = Some(load_texture_from_file(ctx, "src/raw.png"));
+                    self.texture2 = Some(load_texture_from_file(ctx, "src/Dsp.png"));
                     self.reconstruction_method = "滤波反投影".to_string();
+                    self.readtime();
+                    self.appstate = AppState::Showimg;
+                });
+            }
+            AppState::Sart => {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.heading("正在进行代数重建");
+                    println!("正在进行代数重建");
+                    self.readtime();
+                    let angles: Vec<f32> = (0..self.pjimage.len())
+                        .map(|i| i as f32 * 180.0 / self.pjimage.len() as f32)
+                        .collect();
+                    let rebuild_ct = sart_reconstruction(self.pjimage.clone(), angles, None);
+                    // 将 Array2<f32> 转换为 Vec<Vec<f32>>
+                    let rebuild_ct_vec = rebuild_ct
+                        .axis_iter(Axis(0))
+                        .map(|row| row.to_vec())
+                        .collect();
+                    save_as_png(rebuild_ct_vec, "src/sart.png");
+                    println!("代数重建成功,图片已保存到src/sart.png");
+                    self.texture1 = Some(load_texture_from_file(ctx, "src/raw.png"));
+                    self.texture2 = Some(load_texture_from_file(ctx, "src/sart.png"));
+                    self.reconstruction_method = "代数重建反投影".to_string();
                     self.readtime();
                     self.appstate = AppState::Showimg;
                 });

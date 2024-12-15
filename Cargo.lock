@@ -878,6 +878,7 @@ dependencies = [
  "fundsp",
  "image",
  "nalgebra",
+ "ndarray",
  "nshare",
  "rand",
  "realfft",
