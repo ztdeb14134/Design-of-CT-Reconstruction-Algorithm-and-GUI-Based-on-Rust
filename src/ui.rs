@@ -39,10 +39,10 @@ pub struct MyApp {
 impl Default for MyApp {
     fn default() -> Self {
         Self {
-            input_file_path: String::from("src\\CT_3.bin"),
+            input_file_path: String::from("src\\CT_600_600_10.bin"),
             cols: "600".to_string(),
             rows: "600".to_string(),
-            frames: "246".to_string(),
+            frames: "10".to_string(),
             bytes_per_pixel: "4".to_string(),
             appstate: AppState::Home,
             ct: vec![vec![vec![]]],

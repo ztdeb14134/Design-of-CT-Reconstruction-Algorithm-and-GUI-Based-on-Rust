@@ -12,9 +12,6 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
-
-
-
 #[cfg(test)]
 mod printbin {
     #[test]
@@ -58,5 +55,57 @@ mod printbin {
         }
 
         println!("CT数据已成功生成到 ct_data.bin");
+    }
+    #[test]
+    fn process_ct() {
+        use std::fs::File;
+        use std::io::{Read, Write};
+        use std::path::Path;
+        let input_path = Path::new("src/CT_3.bin");
+        let output_path = Path::new("src/CT_600_600_10.bin");
+
+        // 原始尺寸
+        const WIDTH: usize = 600;
+        const HEIGHT: usize = 600;
+        const DEPTH: usize = 246;
+
+        // 目标层数
+        const TARGET_LAYERS: usize = 10;
+
+        // 读取原始文件
+        let mut file = File::open(input_path).unwrap();
+        let mut buffer = vec![0u8; WIDTH * HEIGHT * DEPTH * 4]; // f32 = 4 bytes
+        file.read_exact(&mut buffer).unwrap();
+
+        // 将字节转换为f32
+        let mut data = Vec::with_capacity(WIDTH * HEIGHT * DEPTH);
+        for chunk in buffer.chunks_exact(4) {
+            let value = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+            data.push(value);
+        }
+
+        // 计算采样间隔
+        let step = (DEPTH as f32 / TARGET_LAYERS as f32).ceil() as usize;
+
+        // 创建输出缓冲区
+        let mut output_data = Vec::with_capacity(WIDTH * HEIGHT * TARGET_LAYERS);
+
+        // 提取目标层
+        for layer in 0..TARGET_LAYERS {
+            let source_layer = (layer * step).min(DEPTH - 1);
+            let start = source_layer * WIDTH * HEIGHT;
+            let end = start + WIDTH * HEIGHT;
+            output_data.extend_from_slice(&data[start..end]);
+        }
+
+        // 将f32转回字节
+        let mut output_buffer = Vec::with_capacity(WIDTH * HEIGHT * TARGET_LAYERS * 4);
+        for value in output_data {
+            output_buffer.extend_from_slice(&value.to_le_bytes());
+        }
+
+        // 写入输出文件
+        let mut output_file = File::create(output_path).unwrap();
+        output_file.write_all(&output_buffer).unwrap();
     }
 }
