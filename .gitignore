@@ -1,5 +1,6 @@
 /target/release/*
 !/target/release/ct_rebuild_project.exe
+!/target/release/src/
 /target/debug
 /target/.rustc_info.json
 /target/CACHEDIR.TAG
